@@ -40,28 +40,69 @@ jobs:
       - name: Require Vercel secrets
         run: |
           missing=0
-          if [ -z "$VERCEL_TOKEN" ]; then
+          TOKEN="$(printf '%s' "$VERCEL_TOKEN" | tr -d '\r\n ')"
+          ORG="$(printf '%s' "$VERCEL_ORG_ID" | tr -d '\r\n ')"
+          PROJECT="$(printf '%s' "$VERCEL_PROJECT_ID" | tr -d '\r\n ')"
+          if [ -z "$TOKEN" ]; then
             echo "Add GitHub Actions secret VERCEL_TOKEN from https://vercel.com/account/tokens"
             missing=1
           fi
-          if [ -z "$VERCEL_ORG_ID" ]; then
+          if [ -z "$ORG" ]; then
             echo "Add GitHub Actions secret VERCEL_ORG_ID (team_… from npx vercel link)"
             missing=1
           fi
-          if [ -z "$VERCEL_PROJECT_ID" ]; then
+          if [ -z "$PROJECT" ]; then
             echo "Add GitHub Actions secret VERCEL_PROJECT_ID (prj_… from npx vercel link)"
             missing=1
           fi
-          exit "$missing"
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          {
+            echo "VERCEL_TOKEN=$TOKEN"
+            echo "VERCEL_ORG_ID=$ORG"
+            echo "VERCEL_PROJECT_ID=$PROJECT"
+          } >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: Link Vercel project
+        run: |
+          set -euo pipefail
+          ORG="$(printf '%s' "$VERCEL_ORG_ID" | tr -d '\r\n ')"
+          PROJECT="$(printf '%s' "$VERCEL_PROJECT_ID" | tr -d '\r\n ')"
+          case "$ORG" in
+            team_*) ;;
+            prj_*)
+              echo "VERCEL_ORG_ID starts with prj_. That value belongs in VERCEL_PROJECT_ID. Swap the two secrets."
+              exit 1
+              ;;
+            *)
+              echo "VERCEL_ORG_ID should start with team_ (from npx vercel link / .vercel/project.json orgId)."
+              exit 1
+              ;;
+          esac
+          case "$PROJECT" in
+            prj_*) ;;
+            team_*)
+              echo "VERCEL_PROJECT_ID starts with team_. That value belongs in VERCEL_ORG_ID. Swap the two secrets."
+              exit 1
+              ;;
+            *)
+              echo "VERCEL_PROJECT_ID should start with prj_ (from npx vercel link / .vercel/project.json projectId)."
+              exit 1
+              ;;
+          esac
+          rm -rf .vercel
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$ORG" "$PROJECT" > .vercel/project.json
+          echo "Linked orgId=${ORG} projectId=${PROJECT}"
       - name: Pull Vercel production env
-        run: npx vercel pull --yes --environment=production
+        run: npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
       - name: Build for Vercel
-        run: npx vercel build --prod
+        run: npx vercel build --prod --token="$VERCEL_TOKEN"
       - name: Deploy to Vercel
-        run: npx vercel deploy --prebuilt --prod
+        run: npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
