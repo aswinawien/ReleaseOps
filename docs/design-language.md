@@ -1,8 +1,8 @@
 # Design language
 
-ReleaseOps is an **Operate** surface. Agents scan a queue and act. The visual world is a railway timetable / departure board (impeccable seed `cee50420`, grounded candidate 5, code-led, degraded roll). The old cream paper + serif display + tracked kicker + four metric cards is the anti-reference.
+ReleaseOps is an **Operate** surface. Agents scan a queue and act. The visual world is a railway timetable / departure board. The old cream paper + serif display + tracked kicker + four metric cards is the anti-reference.
 
-Longer token record: [DESIGN.md](../DESIGN.md). Product constraints: [PRODUCT.md](../PRODUCT.md).
+Longer token record: [DESIGN.md](../DESIGN.md).
 
 ## Scene
 

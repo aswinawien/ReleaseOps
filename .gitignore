@@ -41,4 +41,5 @@ next-env.d.ts
 .cursor/
 skills-lock.json
 PRODUCT.md
+AGENTS.md
 .env*
