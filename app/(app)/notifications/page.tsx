@@ -2,8 +2,9 @@ import { createClient } from '@/lib/supabase/server';
 import { requireAppContext } from '@/lib/auth/session';
 import { listNotifications } from '@/lib/repositories/tickets';
 import { NotificationList } from '@/features/notifications/notification-list';
+import { PageHeader } from '@/components/ui/page-header';
 
-export const metadata = { title: 'Notifications' };
+export const metadata = { title: 'Alerts' };
 
 export default async function NotificationsPage() {
   const context = await requireAppContext();
@@ -12,12 +13,10 @@ export default async function NotificationsPage() {
 
   return (
     <div className="grid gap-6">
-      <div>
-        <h1 className="font-display text-4xl">Notifications</h1>
-        <p className="mt-2 text-ink-soft">
-          These rows come from the database. The live channel only announces that a new row exists.
-        </p>
-      </div>
+      <PageHeader
+        title="Alerts"
+        description="These rows come from the database. The live channel only announces that a new row exists."
+      />
       <NotificationList userId={context.userId} initial={notifications} />
     </div>
   );

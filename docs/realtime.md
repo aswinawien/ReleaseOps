@@ -7,6 +7,7 @@ The database is the source of truth. WebSockets announce that something durable 
 | Channel | Kind | Authorization | Payload |
 | --- | --- | --- | --- |
 | `ticket-db:{ticketId}` | Postgres Changes | Table RLS | Ticket, comments, activity, approvals |
+| `org-db:{organizationId}` | Postgres Changes | Table RLS | Ticket row changes for the Kanban |
 | `ticket:{ticketId}` | Private Broadcast + Presence | `realtime.messages` policies | Typing, who is viewing |
 | `org:{organizationId}` | Private Presence | `realtime.messages` policies | Workspace connection heartbeat |
 | `user-db:{userId}` | Postgres Changes | `notifications.user_id = auth.uid()` | Inbox rows |

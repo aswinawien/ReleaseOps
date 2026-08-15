@@ -1,3 +1,13 @@
+export function safeNextPath(next: unknown, fallback = '/dashboard'): string {
+  if (typeof next !== 'string') {
+    return fallback;
+  }
+  if (!next.startsWith('/') || next.startsWith('//') || next.includes('://')) {
+    return fallback;
+  }
+  return next;
+}
+
 export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ');
 }

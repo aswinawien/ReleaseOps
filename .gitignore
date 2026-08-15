@@ -27,13 +27,17 @@ yarn-error.log*
 .pnpm-debug.log*
 
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
 !.env.example
 
 .vercel
 
 *.tsbuildinfo
 next-env.d.ts
+
+# Local AI / agent tooling — not part of the product
+.agents/
+.impeccable/
+.cursor/
+skills-lock.json
+PRODUCT.md

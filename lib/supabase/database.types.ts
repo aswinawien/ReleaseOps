@@ -83,6 +83,27 @@ export type ActivityEvent = {
   created_at: string;
 };
 
+export type Invitation = {
+  id: string;
+  organization_id: string;
+  email: string;
+  role: MembershipRole;
+  token: string;
+  invited_by: string;
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string;
+};
+
+export type InvitationPreview = {
+  id: string;
+  organization_name: string;
+  email: string;
+  role: MembershipRole;
+  expires_at: string;
+  accepted_at: string | null;
+};
+
 export type Notification = {
   id: string;
   organization_id: string;
@@ -334,9 +355,44 @@ export type Database = {
           },
         ]
       >;
+      invitations: Table<
+        Invitation,
+        {
+          organization_id: string;
+          email: string;
+          role: MembershipRole;
+          invited_by: string;
+          token?: string;
+          expires_at?: string;
+          accepted_at?: string | null;
+          id?: string;
+        },
+        { accepted_at?: string | null; expires_at?: string; role?: MembershipRole; token?: string },
+        [
+          {
+            foreignKeyName: 'invitations_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invitations_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ]
+      >;
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_invitation: {
+        Args: { p_token: string };
+        Returns: InvitationPreview[];
+      };
+    };
     Enums: {
       membership_role: MembershipRole;
       ticket_status: TicketStatus;

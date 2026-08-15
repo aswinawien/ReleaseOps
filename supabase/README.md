@@ -10,4 +10,4 @@ Reset a local stack with:
 npx supabase db reset
 ```
 
-Hosted projects: run the migrations in the SQL editor, then the seed. Confirm email for demo users is already set in the seed (`email_confirmed_at`).
+Hosted projects: run the migrations in the SQL editor (including `20260816010000_approvals_org_status_idx.sql`), then the seed. Confirm email for demo users is already set in the seed (`email_confirmed_at`).

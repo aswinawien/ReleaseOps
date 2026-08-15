@@ -35,6 +35,44 @@ export function canManageMembers(role: MembershipRole): boolean {
   return MANAGER_ROLES.includes(role);
 }
 
+export function canAssignRole(
+  actor: MembershipRole,
+  targetCurrent: MembershipRole,
+  next: MembershipRole,
+): boolean {
+  if (!canManageMembers(actor)) {
+    return false;
+  }
+  if (actor === 'admin' && (targetCurrent === 'owner' || next === 'owner')) {
+    return false;
+  }
+  return true;
+}
+
+export function canInviteRole(actor: MembershipRole, next: MembershipRole): boolean {
+  return canAssignRole(actor, 'viewer', next);
+}
+
+export const MEMBERSHIP_ROLES: MembershipRole[] = [
+  'owner',
+  'admin',
+  'agent',
+  'client',
+  'viewer',
+];
+
+export const ROLE_CAPABILITIES = [
+  { action: 'Read workspace tickets', owner: true, admin: true, agent: true, client: true, viewer: true },
+  { action: 'Create ticket', owner: true, admin: true, agent: true, client: true, viewer: false },
+  { action: 'Assign / status / priority', owner: true, admin: true, agent: true, client: false, viewer: false },
+  { action: 'Comment', owner: true, admin: true, agent: true, client: true, viewer: false },
+  { action: 'Request approval', owner: true, admin: true, agent: true, client: false, viewer: false },
+  { action: 'Review approval', owner: true, admin: true, agent: false, client: true, viewer: false },
+  { action: 'Change member roles', owner: true, admin: true, agent: false, client: false, viewer: false },
+  { action: 'Invite members', owner: true, admin: true, agent: false, client: false, viewer: false },
+  { action: 'Move tickets on the Kanban', owner: true, admin: true, agent: true, client: false, viewer: false },
+] as const;
+
 export function isStaffRole(role: MembershipRole): boolean {
   return STAFF_ROLES.includes(role);
 }

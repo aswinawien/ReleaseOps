@@ -10,10 +10,12 @@ import { ConnectionBadge, ConnectionBanner } from '@/features/realtime/connectio
 import { SkipLink } from '@/components/ui/skip-link';
 
 const links = [
-  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/dashboard', label: 'Board' },
   { href: '/tickets', label: 'Tickets' },
+  { href: '/approvals', label: 'Approvals' },
+  { href: '/team', label: 'Team' },
   { href: '/tickets/new', label: 'New ticket' },
-  { href: '/notifications', label: 'Notifications' },
+  { href: '/notifications', label: 'Alerts' },
 ];
 
 export function AppShell({
@@ -21,12 +23,14 @@ export function AppShell({
   userName,
   role,
   unreadCount,
+  pendingApprovalCount,
   children,
 }: {
   organizationName: string;
   userName: string;
   role: string;
   unreadCount: number;
+  pendingApprovalCount: number;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -46,83 +50,93 @@ export function AppShell({
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  function isActive(href: string) {
+    if (href === '/tickets') {
+      return pathname === '/tickets' || (pathname.startsWith('/tickets/') && pathname !== '/tickets/new');
+    }
+    return pathname === href;
+  }
+
+  const nav = (
+    <nav aria-label="Primary" className="flex flex-col gap-1 md:flex-row md:flex-wrap md:items-center">
+      {links.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className={cn(
+            'inline-flex min-h-11 items-center px-3 text-sm font-medium',
+            isActive(link.href) ? 'bg-white/10 text-white' : 'text-rail-ink/80 hover:bg-white/5 hover:text-white',
+          )}
+          aria-current={isActive(link.href) ? 'page' : undefined}
+        >
+          {link.label}
+          {link.href === '/notifications' && unreadCount > 0 ? (
+            <span className="ml-2 bg-signal px-1.5 py-0.5 text-xs font-semibold text-ink tabular">
+              {unreadCount}
+            </span>
+          ) : null}
+          {link.href === '/approvals' && pendingApprovalCount > 0 ? (
+            <span className="ml-2 bg-signal px-1.5 py-0.5 text-xs font-semibold text-ink tabular">
+              {pendingApprovalCount}
+            </span>
+          ) : null}
+        </Link>
+      ))}
+    </nav>
+  );
+
   return (
     <div className="min-h-screen bg-paper">
       <SkipLink />
-      <ConnectionBanner />
-      <div className="mx-auto flex min-h-screen max-w-7xl">
-        <aside
-          className={cn(
-            'fixed inset-y-0 left-0 z-30 w-72 border-r border-line bg-ink text-paper transition-transform md:static md:translate-x-0',
-            open ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-          )}
-        >
-          <div className="flex h-full flex-col px-5 py-6">
-            <p className="font-display text-2xl">ReleaseOps</p>
-            <p className="mt-1 text-sm text-paper/70">{organizationName}</p>
-            <nav aria-label="Primary" className="mt-8 grid gap-1">
-              {links.map((link) => {
-                const active =
-                  link.href === '/tickets'
-                    ? pathname === '/tickets' ||
-                      (pathname.startsWith('/tickets/') && pathname !== '/tickets/new')
-                    : pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={cn(
-                      'rounded-md px-3 py-2 text-sm font-medium',
-                      active ? 'bg-white/10 text-white' : 'text-paper/80 hover:bg-white/5',
-                    )}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    {link.label}
-                    {link.href === '/notifications' && unreadCount > 0 ? (
-                      <span className="ml-2 rounded-full bg-signal px-2 py-0.5 text-xs text-ink">
-                        {unreadCount}
-                      </span>
-                    ) : null}
-                  </Link>
-                );
-              })}
-            </nav>
-            <div className="mt-auto grid gap-2 text-sm">
+      <header className="bg-rail text-rail-ink">
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
+          <div className="min-w-0">
+            <p className="font-display text-2xl leading-none">ReleaseOps</p>
+            <p className="mt-1 truncate text-xs text-rail-ink/70">{organizationName}</p>
+          </div>
+          <div className="hidden flex-1 md:block">{nav}</div>
+          <div className="ml-auto hidden items-center gap-4 md:flex">
+            <ConnectionBadge />
+            <p className="text-sm">
+              {userName}
+              <span className="ml-2 capitalize text-rail-ink/60">{role}</span>
+            </p>
+            <SignOutButton variant="rail" />
+          </div>
+          <button
+            type="button"
+            className="ml-auto min-h-11 border border-white/20 px-3 text-sm font-semibold md:hidden"
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            onClick={() => setOpen((value) => !value)}
+          >
+            Menu
+          </button>
+        </div>
+        {open ? (
+          <div id="mobile-nav" className="border-t border-white/10 px-4 py-3 md:hidden">
+            {nav}
+            <div className="mt-4 grid gap-2 border-t border-white/10 pt-3 text-sm">
               <ConnectionBadge />
               <p>
                 {userName}
-                <span className="block capitalize text-paper/60">{role}</span>
+                <span className="ml-2 capitalize text-rail-ink/60">{role}</span>
               </p>
-              <SignOutButton />
+              <SignOutButton variant="rail" />
             </div>
           </div>
-        </aside>
-        {open ? (
-          <button
-            type="button"
-            className="fixed inset-0 z-20 bg-ink/40 md:hidden"
-            aria-label="Close navigation"
-            onClick={() => setOpen(false)}
-          />
         ) : null}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center justify-between border-b border-line px-4 py-3 md:hidden">
-            <p className="font-display text-lg">ReleaseOps</p>
-            <button
-              type="button"
-              className="min-h-11 rounded-md border border-line bg-white px-3 text-sm font-semibold"
-              aria-expanded={open}
-              aria-controls="mobile-nav"
-              onClick={() => setOpen((value) => !value)}
-            >
-              Menu
-            </button>
-          </header>
-          <main id="main-content" className="flex-1 px-4 py-6 md:px-8">
-            {children}
-          </main>
-        </div>
-      </div>
+      </header>
+      <ConnectionBanner />
+      <main
+        id="main-content"
+        className={cn(
+          'mx-auto px-4 py-6 md:py-8',
+          pathname === '/dashboard' ? 'max-w-none' : 'max-w-6xl',
+        )}
+      >
+        {children}
+      </main>
     </div>
   );
 }

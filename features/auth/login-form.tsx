@@ -1,14 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { loginAction } from '@/features/auth/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert } from '@/components/ui/alert';
 
-export function LoginForm() {
-  const router = useRouter();
+export function LoginForm({ next }: { next?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -18,14 +16,12 @@ export function LoginForm() {
     const result = await loginAction({
       email: String(formData.get('email') ?? ''),
       password: String(formData.get('password') ?? ''),
+      next,
     });
     setLoading(false);
-    if (!result.ok) {
+    if (result && !result.ok) {
       setError(result.error);
-      return;
     }
-    router.push(result.data.redirectTo);
-    router.refresh();
   }
 
   return (

@@ -4,17 +4,10 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/env';
-import { actionErr, actionOk, type ActionResult } from '@/lib/actions/result';
+import { actionErr, actionOk, fromUnknownError, type ActionResult } from '@/lib/actions/result';
 import { loginSchema, signupSchema } from '@/lib/validations/auth';
-
-function slugify(value: string): string {
-  const slug = value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48);
-  return slug.length >= 2 ? slug : `workspace-${crypto.randomUUID().slice(0, 8)}`;
-}
+import { bootstrapOwnerWorkspace } from '@/lib/auth/create-workspace';
+import { safeNextPath } from '@/lib/utils';
 
 export async function loginAction(input: unknown): Promise<ActionResult<{ redirectTo: string }>> {
   if (!isSupabaseConfigured()) {
@@ -26,17 +19,28 @@ export async function loginAction(input: unknown): Promise<ActionResult<{ redire
     return actionErr(parsed.error.issues[0]?.message ?? 'Check your email and password.');
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
-    email: parsed.data.email,
-    password: parsed.data.password,
-  });
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: parsed.data.email,
+      password: parsed.data.password,
+    });
 
-  if (error) {
-    return actionErr(error.message);
+    if (error) {
+      return actionErr(error.message);
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    if (message.includes('fetch failed') || message.includes('ENOTFOUND')) {
+      return actionErr(
+        'Could not reach Supabase. Check NEXT_PUBLIC_SUPABASE_URL in .env and restart npm run dev.',
+      );
+    }
+    return fromUnknownError(error, 'Sign in failed.');
   }
 
-  return actionOk({ redirectTo: '/dashboard' });
+  revalidatePath('/', 'layout');
+  redirect(safeNextPath(parsed.data.next));
 }
 
 export async function signupAction(input: unknown): Promise<ActionResult<{ redirectTo: string }>> {
@@ -51,51 +55,79 @@ export async function signupAction(input: unknown): Promise<ActionResult<{ redir
 
   const supabase = await createClient();
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  const afterAuth = safeNextPath(
+    parsed.data.next ??
+      (parsed.data.inviteToken ? `/invite/${parsed.data.inviteToken}` : '/dashboard'),
+  );
 
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
       data: { full_name: parsed.data.fullName },
-      emailRedirectTo: `${origin}/auth/callback`,
+      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(afterAuth)}`,
     },
   });
 
-  if (error) {
+    if (error) {
+      const lowered = error.message.toLowerCase();
+      if (lowered.includes('rate limit')) {
+        return actionErr(
+          'Supabase is blocking more signup emails from this project for a bit. Use Sign in with the seeded demo owner instead of creating another account.',
+        );
+      }
+      const already =
+        lowered.includes('already registered') || lowered.includes('already been registered');
+      if (already) {
+      const { data: signedIn, error: signInError } = await supabase.auth.signInWithPassword({
+        email: parsed.data.email,
+        password: parsed.data.password,
+      });
+      if (signInError || !signedIn.user) {
+        return actionErr('That email already has an account. Sign in with the same password.');
+      }
+      if (!parsed.data.inviteToken) {
+        const workspace = await bootstrapOwnerWorkspace(
+          signedIn.user.id,
+          parsed.data.organizationName,
+        );
+        if (!workspace.ok) {
+          return workspace;
+        }
+      }
+      revalidatePath('/', 'layout');
+      return actionOk({
+        redirectTo: safeNextPath(
+          parsed.data.next ??
+            (parsed.data.inviteToken ? `/invite/${parsed.data.inviteToken}` : '/dashboard'),
+        ),
+      });
+    }
     return actionErr(error.message);
   }
 
   const userId = data.user?.id;
-  if (userId) {
-    const slug = `${slugify(parsed.data.organizationName)}-${userId.slice(0, 6)}`;
-    const { data: organization, error: orgError } = await supabase
-      .from('organizations')
-      .insert({ name: parsed.data.organizationName, slug })
-      .select('id')
-      .single();
-
-    if (orgError) {
-      return actionErr(orgError.message);
-    }
-
-    const { error: membershipError } = await supabase.from('memberships').insert({
-      organization_id: organization.id,
-      user_id: userId,
-      role: 'owner',
-    });
-
-    if (membershipError) {
-      return actionErr(membershipError.message);
+  if (userId && !parsed.data.inviteToken) {
+    const workspace = await bootstrapOwnerWorkspace(userId, parsed.data.organizationName);
+    if (!workspace.ok) {
+      return workspace;
     }
   }
+
+  const redirectTo = safeNextPath(
+    parsed.data.next ??
+      (parsed.data.inviteToken ? `/invite/${parsed.data.inviteToken}` : '/dashboard'),
+  );
 
   if (!data.session) {
     return actionErr(
-      'Account created. Confirm the email if your project requires it, then sign in.',
+      parsed.data.inviteToken
+        ? 'Account created. Confirm the email if required, then open the invite link again.'
+        : 'Account created. Confirm the email if your project requires it, then sign in.',
     );
   }
 
-  return actionOk({ redirectTo: '/dashboard' });
+  return actionOk({ redirectTo });
 }
 
 export async function signOutAction(): Promise<void> {

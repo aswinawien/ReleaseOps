@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { requireAppContext } from '@/lib/auth/session';
-import { listTickets } from '@/lib/repositories/tickets';
+import { countTicketsByStatus, listTickets } from '@/lib/repositories/tickets';
 import { ticketFilterSchema } from '@/lib/validations/tickets';
-import { EmptyState } from '@/components/ui/empty-state';
-import { StatusBadge, PriorityBadge } from '@/components/tickets/status-badge';
 import { canCreateTicket } from '@/lib/auth/permissions';
-import { formatRelativeTime, titleFromSlug } from '@/lib/utils';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatusChipNav } from '@/components/tickets/status-chip-nav';
+import { TicketQueue } from '@/components/tickets/ticket-queue';
 import { TicketFilters } from '@/features/tickets/ticket-filters';
 
 export const metadata = { title: 'Tickets' };
@@ -27,69 +27,40 @@ export default async function TicketsPage({
 
   const context = await requireAppContext();
   const supabase = await createClient();
-  const { tickets, total, pageSize } = await listTickets(
-    supabase,
-    context.organization.id,
-    parsed,
-  );
+  const [{ tickets, total, pageSize }, counts] = await Promise.all([
+    listTickets(supabase, context.organization.id, parsed),
+    countTicketsByStatus(supabase, context.organization.id),
+  ]);
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const canCreate = canCreateTicket(context.role);
 
   return (
     <div className="grid gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-4xl">Tickets</h1>
-          <p className="mt-2 text-ink-soft">
-            {total} work order{total === 1 ? '' : 's'} in this workspace.
-          </p>
-        </div>
-        {canCreateTicket(context.role) ? (
-          <Link
-            href="/tickets/new"
-            className="inline-flex min-h-11 items-center rounded-md bg-sea px-4 text-sm font-semibold text-white hover:bg-sea-dark"
-          >
-            New ticket
-          </Link>
-        ) : null}
-      </div>
+      <PageHeader
+        title="Tickets"
+        description={`${total} work order${total === 1 ? '' : 's'} in this workspace.`}
+        action={
+          canCreate ? (
+            <Link
+              href="/tickets/new"
+              className="inline-flex min-h-11 items-center bg-sea px-4 text-sm font-semibold text-white hover:bg-sea-dark"
+            >
+              New ticket
+            </Link>
+          ) : null
+        }
+      />
+      <StatusChipNav counts={counts} active={parsed.status} />
       <TicketFilters filters={parsed} />
-      {tickets.length === 0 ? (
-        <EmptyState
-          title="No matching tickets"
-          description="Try clearing filters or create a new request."
-          actionLabel={canCreateTicket(context.role) ? 'Create ticket' : undefined}
-          actionHref={canCreateTicket(context.role) ? '/tickets/new' : undefined}
-        />
-      ) : (
-        <ul className="divide-y divide-line rounded-xl border border-line bg-card">
-          {tickets.map((ticket) => (
-            <li key={ticket.id}>
-              <Link
-                href={`/tickets/${ticket.id}`}
-                className="grid gap-3 px-4 py-4 hover:bg-paper/70 md:grid-cols-[1fr_auto]"
-              >
-                <div>
-                  <p className="font-medium">{ticket.title}</p>
-                  <p className="text-sm text-ink-soft">
-                    {ticket.project?.name ?? 'No project'} ·{' '}
-                    {ticket.assignee?.full_name ?? 'Unassigned'} · updated{' '}
-                    {formatRelativeTime(ticket.updated_at)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge status={ticket.status} />
-                  <PriorityBadge priority={ticket.priority} />
-                  <span className="text-sm text-ink-soft">
-                    {titleFromSlug(ticket.status)}
-                  </span>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+      <TicketQueue
+        tickets={tickets}
+        emptyTitle="No matching tickets"
+        emptyDescription="Try clearing filters or create a new request."
+        emptyActionLabel={canCreate ? 'Create ticket' : undefined}
+        emptyActionHref={canCreate ? '/tickets/new' : undefined}
+      />
       {pageCount > 1 ? (
-        <nav aria-label="Pagination" className="flex gap-2">
+        <nav aria-label="Pagination" className="flex flex-wrap gap-1">
           {Array.from({ length: pageCount }, (_, index) => {
             const page = index + 1;
             const search = new URLSearchParams();
@@ -103,8 +74,8 @@ export default async function TicketsPage({
                 href={`/tickets?${search.toString()}`}
                 className={
                   page === parsed.page
-                    ? 'rounded-md bg-ink px-3 py-2 text-sm text-white'
-                    : 'rounded-md border border-line bg-white px-3 py-2 text-sm'
+                    ? 'inline-flex min-h-11 min-w-11 items-center justify-center bg-rail px-3 text-sm text-rail-ink'
+                    : 'inline-flex min-h-11 min-w-11 items-center justify-center border border-line bg-board px-3 text-sm'
                 }
                 aria-current={page === parsed.page ? 'page' : undefined}
               >

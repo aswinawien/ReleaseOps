@@ -11,11 +11,7 @@ export function ConnectionBanner() {
     <div
       role="status"
       aria-live="polite"
-      className={
-        unhealthy
-          ? 'border-b border-signal/40 bg-signal/15 px-4 py-2 text-sm text-ink'
-          : 'sr-only'
-      }
+      className={unhealthy ? 'border-b border-signal/50 bg-signal px-4 py-2 text-sm text-ink' : 'sr-only'}
     >
       {unhealthy ? `${label}. Ticket edits still save to the database.` : label}
     </div>
@@ -27,11 +23,8 @@ export function ConnectionBadge() {
   const live = status === 'connected' || status === 'recovered';
 
   return (
-    <p className="flex items-center gap-2 text-xs text-ink-soft" aria-live="polite">
-      <span
-        className={live ? 'h-2 w-2 rounded-full bg-ok' : 'h-2 w-2 rounded-full bg-signal'}
-        aria-hidden="true"
-      />
+    <p className="flex items-center gap-2 text-xs text-rail-ink/80" aria-live="polite">
+      <span className={live ? 'h-2 w-2 bg-ok' : 'h-2 w-2 bg-signal'} aria-hidden="true" />
       <span>{label}</span>
     </p>
   );

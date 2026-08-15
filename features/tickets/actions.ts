@@ -8,7 +8,9 @@ import {
   canChangeTicketPriority,
   canChangeTicketStatus,
   canCreateTicket,
+  canTransitionStatus,
 } from '@/lib/auth/permissions';
+import { getTicketById } from '@/lib/repositories/tickets';
 import { actionErr, actionOk, type ActionResult } from '@/lib/actions/result';
 import {
   assignTicketSchema,
@@ -65,6 +67,18 @@ export async function updateTicketStatusAction(input: unknown): Promise<ActionRe
   }
 
   const supabase = await createClient();
+  const ticket = await getTicketById(supabase, parsed.data.ticketId);
+  if (!ticket || ticket.organization_id !== context.organization.id) {
+    return actionErr('Ticket not found.');
+  }
+
+  if (
+    ticket.status !== parsed.data.status &&
+    !canTransitionStatus(context.role, ticket.status, parsed.data.status)
+  ) {
+    return actionErr('That status move is not allowed for your role.');
+  }
+
   const { data, error } = await supabase
     .from('tickets')
     .update({ status: parsed.data.status })
@@ -79,6 +93,7 @@ export async function updateTicketStatusAction(input: unknown): Promise<ActionRe
 
   revalidatePath(`/tickets/${parsed.data.ticketId}`);
   revalidatePath('/tickets');
+  revalidatePath('/dashboard');
   return actionOk({ id: data.id });
 }
 
@@ -109,6 +124,7 @@ export async function updateTicketPriorityAction(
   }
 
   revalidatePath(`/tickets/${parsed.data.ticketId}`);
+  revalidatePath('/dashboard');
   return actionOk({ id: data.id });
 }
 
@@ -138,5 +154,6 @@ export async function assignTicketAction(input: unknown): Promise<ActionResult<{
 
   revalidatePath(`/tickets/${parsed.data.ticketId}`);
   revalidatePath('/tickets');
+  revalidatePath('/dashboard');
   return actionOk({ id: data.id });
 }

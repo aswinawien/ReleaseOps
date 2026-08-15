@@ -10,6 +10,10 @@ export function organizationChannelName(organizationId: string): string {
   return `org:${organizationId}`;
 }
 
+export function organizationDatabaseChannelName(organizationId: string): string {
+  return `org-db:${organizationId}`;
+}
+
 export function userNotificationChannelName(userId: string): string {
   return `user-db:${userId}`;
 }

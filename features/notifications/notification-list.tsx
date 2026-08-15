@@ -37,21 +37,31 @@ export function NotificationList({
           Mark all as read
         </Button>
       </form>
-      <ul className="divide-y divide-line rounded-xl border border-line bg-card">
+      <ul className="divide-y divide-line border border-line bg-board">
         {notifications.map((notification) => (
-          <li key={notification.id} className="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between">
+          <li
+            key={notification.id}
+            className="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between"
+          >
             <div>
-              <p className="font-medium">{notification.title}</p>
+              <p className="font-medium">
+                {notification.title}
+                {notification.read_at ? null : (
+                  <span className="ml-2 bg-signal/20 px-1.5 py-0.5 text-xs font-semibold text-ink">
+                    unread
+                  </span>
+                )}
+              </p>
               <p className="text-sm text-ink-soft">
-                {notification.body} · {formatRelativeTime(notification.created_at)}
-                {notification.read_at ? '' : ' · unread'}
+                {notification.body} ·{' '}
+                <span className="tabular">{formatRelativeTime(notification.created_at)}</span>
               </p>
             </div>
             <div className="flex gap-2">
               {notification.ticket_id ? (
                 <Link
                   href={`/tickets/${notification.ticket_id}`}
-                  className="inline-flex min-h-11 items-center rounded-md border border-line bg-white px-3 text-sm font-semibold"
+                  className="inline-flex min-h-11 items-center border border-line bg-white px-3 text-sm font-semibold"
                 >
                   Open ticket
                 </Link>

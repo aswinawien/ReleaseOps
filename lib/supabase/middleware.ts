@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getPublicSupabaseEnv } from '@/lib/env';
 import type { Database } from '@/lib/supabase/database.types';
+import { safeNextPath } from '@/lib/utils';
 
 export async function updateSession(request: NextRequest) {
   const env = getPublicSupabaseEnv();
@@ -40,7 +41,9 @@ export async function updateSession(request: NextRequest) {
   const isProtectedRoute =
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/tickets') ||
-    pathname.startsWith('/notifications');
+    pathname.startsWith('/notifications') ||
+    pathname.startsWith('/approvals') ||
+    pathname.startsWith('/team');
 
   if (!user && isProtectedRoute) {
     const redirectUrl = request.nextUrl.clone();
@@ -50,7 +53,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && isAuthRoute && pathname !== '/auth/callback') {
+    const next = safeNextPath(request.nextUrl.searchParams.get('next'));
     const redirectUrl = request.nextUrl.clone();
+    if (next.startsWith('/invite/')) {
+      return NextResponse.redirect(new URL(next, request.url));
+    }
     redirectUrl.pathname = '/dashboard';
     redirectUrl.search = '';
     return NextResponse.redirect(redirectUrl);

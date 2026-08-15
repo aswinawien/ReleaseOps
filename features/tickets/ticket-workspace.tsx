@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { MembershipRole } from '@/lib/supabase/database.types';
 import type {
   ActivityWithActor,
@@ -106,15 +107,15 @@ export function TicketWorkspace({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
       <div className="grid gap-6">
-        <header className="rounded-xl border border-line bg-card p-6">
+        <header className="border border-line bg-board p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 className="font-display text-4xl">{ticket.title}</h1>
-              <p className="mt-2 text-sm text-ink-soft">
+            <div className="max-w-3xl">
+              <h1 className="font-display text-[2.25rem] leading-none tracking-tight">{ticket.title}</h1>
+              <p className="mt-3 text-sm text-ink-soft">
                 Opened by {ticket.creator?.full_name ?? 'Unknown'} ·{' '}
-                {formatRelativeTime(ticket.created_at)}
+                <span className="tabular">{formatRelativeTime(ticket.created_at)}</span>
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -122,7 +123,7 @@ export function TicketWorkspace({
               <PriorityBadge priority={ticket.priority} />
             </div>
           </div>
-          <p className="mt-4 whitespace-pre-wrap text-ink">{ticket.description}</p>
+          <p className="mt-4 max-w-[70ch] whitespace-pre-wrap text-ink">{ticket.description}</p>
           <p className="mt-4 text-xs text-ink-soft" aria-live="polite">
             {connectionStatusLabel(realtime.status)}. Database writes still succeed if the socket
             drops.
@@ -131,7 +132,7 @@ export function TicketWorkspace({
 
         {error ? <Alert>{error}</Alert> : null}
 
-        <section className="grid gap-4 rounded-xl border border-line bg-card p-6 md:grid-cols-3">
+        <section className="grid gap-4 border border-line bg-board p-5 md:grid-cols-3">
           {canChangeTicketStatus(role) ? (
             <form
               className="grid gap-2"
@@ -220,14 +221,19 @@ export function TicketWorkspace({
           )}
         </section>
 
-        <section className="rounded-xl border border-line bg-card p-6">
-          <h2 className="font-display text-2xl">Approvals</h2>
+        <section className="border border-line bg-board p-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 className="font-display text-2xl leading-none">Approvals</h2>
+            <Link href="/approvals" className="text-sm font-semibold text-sea underline underline-offset-2">
+              Open approvals board
+            </Link>
+          </div>
           {approvals.length === 0 ? (
-            <p className="mt-2 text-sm text-ink-soft">No approval requests yet.</p>
+            <p className="mt-3 text-sm text-ink-soft">No approval requests yet.</p>
           ) : (
-            <ul className="mt-4 grid gap-3">
+            <ul className="mt-4 divide-y divide-line border border-line">
               {approvals.map((approval) => (
-                <li key={approval.id} className="rounded-md border border-line p-3">
+                <li key={approval.id} className="p-3">
                   <p className="text-sm">
                     {titleFromSlug(approval.status)} · requested by{' '}
                     {approval.requester?.full_name ?? 'Unknown'}
@@ -287,8 +293,8 @@ export function TicketWorkspace({
           ) : null}
         </section>
 
-        <section className="rounded-xl border border-line bg-card p-6">
-          <h2 className="font-display text-2xl">Comments</h2>
+        <section className="border border-line bg-board p-5">
+          <h2 className="font-display text-2xl leading-none">Comments</h2>
           {comments.length === 0 ? (
             <div className="mt-4">
               <EmptyState
@@ -297,16 +303,16 @@ export function TicketWorkspace({
               />
             </div>
           ) : (
-            <ol className="mt-4 grid gap-4" aria-live="polite">
+            <ol className="mt-4 divide-y divide-line border border-line" aria-live="polite">
               {comments.map((comment) => (
-                <li key={comment.id} className="rounded-md bg-paper px-4 py-3">
+                <li key={comment.id} className="px-4 py-3">
                   <p className="text-sm font-semibold">
                     {comment.author?.full_name ?? 'Unknown'}
-                    <span className="ml-2 font-normal text-ink-soft">
+                    <span className="ml-2 font-normal text-ink-soft tabular">
                       {formatRelativeTime(comment.created_at)}
                     </span>
                   </p>
-                  <p className="mt-1 whitespace-pre-wrap">{comment.body}</p>
+                  <p className="mt-1 max-w-[70ch] whitespace-pre-wrap">{comment.body}</p>
                 </li>
               ))}
             </ol>
@@ -344,23 +350,24 @@ export function TicketWorkspace({
       </div>
 
       <aside className="grid h-fit gap-6">
-        <section className="rounded-xl border border-line bg-card p-5">
-          <h2 className="font-display text-xl">Presence</h2>
+        <section className="border border-line bg-board p-4">
+          <h2 className="font-display text-xl leading-none">Presence</h2>
           <div className="mt-3">
             <PresenceAvatars viewers={realtime.viewers} />
           </div>
         </section>
-        <section className="rounded-xl border border-line bg-card p-5">
-          <h2 className="font-display text-xl">Activity</h2>
+        <section className="border border-line bg-board p-4">
+          <h2 className="font-display text-xl leading-none">Activity</h2>
           {activity.length === 0 ? (
             <p className="mt-3 text-sm text-ink-soft">No recorded events yet.</p>
           ) : (
-            <ol className="mt-3 grid gap-3">
+            <ol className="mt-3 divide-y divide-line border-t border-line">
               {activity.map((event) => (
-                <li key={event.id} className="border-l-2 border-sea/40 pl-3 text-sm">
+                <li key={event.id} className="py-3 text-sm">
                   <p className="font-medium">{titleFromSlug(event.event_type)}</p>
                   <p className="text-ink-soft">
-                    {event.actor?.full_name ?? 'System'} · {formatRelativeTime(event.created_at)}
+                    {event.actor?.full_name ?? 'System'} ·{' '}
+                    <span className="tabular">{formatRelativeTime(event.created_at)}</span>
                   </p>
                 </li>
               ))}

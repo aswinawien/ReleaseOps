@@ -8,12 +8,9 @@ export function PresenceAvatars({ viewers }: { viewers: PresenceMember[] }) {
   return (
     <div aria-live="polite">
       <p className="text-sm font-medium text-ink">Currently viewing</p>
-      <ul className="mt-2 flex flex-wrap gap-2">
+      <ul className="mt-2 flex flex-wrap gap-1">
         {viewers.map((viewer) => (
-          <li
-            key={viewer.userId}
-            className="rounded-full bg-sea/10 px-3 py-1 text-sm text-sea-dark"
-          >
+          <li key={viewer.userId} className="border border-line bg-white px-2 py-1 text-sm text-ink">
             {viewer.fullName}
           </li>
         ))}

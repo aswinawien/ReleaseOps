@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAppContext } from '@/lib/auth/session';
 import { isSupabaseConfigured } from '@/lib/env';
 import { countUnreadNotifications } from '@/lib/repositories/tickets';
+import { countPendingApprovals } from '@/lib/repositories/approvals';
 import { AppShell } from '@/components/layout/app-shell';
 import { RealtimeProvider } from '@/features/realtime/realtime-provider';
 import { Alert } from '@/components/ui/alert';
@@ -24,11 +25,18 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   const context = await getAppContext();
   if (!context) {
-    redirect('/login');
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    redirect(user ? '/join' : '/login');
   }
 
   const supabase = await createClient();
-  const unreadCount = await countUnreadNotifications(supabase, context.userId);
+  const [unreadCount, pendingApprovalCount] = await Promise.all([
+    countUnreadNotifications(supabase, context.userId),
+    countPendingApprovals(supabase, context.organization.id),
+  ]);
 
   return (
     <RealtimeProvider
@@ -41,6 +49,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         userName={context.profile.full_name}
         role={context.role}
         unreadCount={unreadCount}
+        pendingApprovalCount={pendingApprovalCount}
       >
         {children}
       </AppShell>

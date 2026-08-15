@@ -2,7 +2,7 @@
 
 ## Keys
 
-The browser only receives `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. `SUPABASE_SERVICE_ROLE_KEY` is read in `lib/supabase/admin.ts`, which imports `server-only`. No client component imports that module.
+The browser only receives `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. `SUPABASE_SERVICE_ROLE_KEY` is read in `lib/supabase/admin.ts`, which imports `server-only`. No client component imports that module. Signup uses that admin client only to insert the first organization and owner membership. Accepting an invite uses it to insert the membership after the signed-in email matches. A user-scoped insert fails RLS in both chicken-egg cases. The service-role key still never ships to the browser.
 
 ## Row-Level Security
 
@@ -20,6 +20,15 @@ Application role checks in `lib/auth/permissions.ts` fail closed in the UI. They
 | Comment | yes | yes | yes | yes | no |
 | Request approval | yes | yes | yes | no | no |
 | Review approval | yes | yes | no | yes | no |
+| Change member roles | yes | yes | no | no | no |
+| Invite members | yes | yes | no | no | no |
+| Move tickets on the Kanban | yes | yes | yes | no | no |
+
+Admins cannot grant, edit, or invite the owner role. The last owner cannot be demoted. You cannot change your own role from the Team screen.
+
+`/approvals` lists every approval in the organization. `/team` lists memberships, pending invite links, and the same matrix this table describes. `/dashboard` is the Kanban; status moves still hit `tickets` RLS. Application checks live in `lib/auth/permissions.ts`; RLS remains the last gate.
+
+Invite preview is `get_invitation(token)` granted to `anon` and `authenticated`. The table itself is not granted to anon. Accept requires the signed-in email to match.
 
 ## Realtime authorization
 
@@ -27,7 +36,7 @@ Private Broadcast and Presence use policies on `realtime.messages`. A user canno
 
 ## Session handling
 
-`@supabase/ssr` stores the session in cookies. Middleware calls `getUser()` so the JWT is validated with the Auth server, not only decoded on the edge. Auth routes bounce signed-in users to `/dashboard`.
+`@supabase/ssr` stores the session in cookies. Middleware calls `getUser()` so the JWT is validated with the Auth server, not only decoded on the edge. Auth routes bounce signed-in users to `/dashboard`, except when `next` is `/invite/...`.
 
 ## What this does not claim
 

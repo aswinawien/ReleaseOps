@@ -18,7 +18,7 @@ export function Input({ label, error, id, className, ...props }: InputProps) {
       <input
         id={inputId}
         className={cn(
-          'min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink',
+          'min-h-11 border border-line bg-white px-3 text-sm text-ink',
           error && 'border-danger',
           className,
         )}

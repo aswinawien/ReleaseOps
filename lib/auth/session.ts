@@ -67,9 +67,21 @@ export async function getAppContext(): Promise<AppContext | null> {
 }
 
 export async function requireAppContext(): Promise<AppContext> {
+  if (!isSupabaseConfigured()) {
+    redirect('/login');
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect('/login');
+  }
+
   const context = await getAppContext();
   if (!context) {
-    redirect('/login');
+    redirect('/join');
   }
   return context;
 }

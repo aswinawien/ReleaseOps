@@ -20,13 +20,13 @@ export function TicketFilters({ filters }: { filters: Filters }) {
   }
 
   return (
-    <form action={apply} className="grid gap-3 rounded-xl border border-line bg-card p-4 md:grid-cols-4">
+    <form action={apply} className="grid gap-3 border border-line bg-board p-3 md:grid-cols-4">
       <label className="grid gap-1 text-sm font-medium">
         Search
         <input
           name="q"
           defaultValue={filters.query}
-          className="min-h-11 rounded-md border border-line bg-white px-3 text-sm"
+          className="min-h-11 border border-line bg-white px-3 text-sm"
           placeholder="Search titles"
         />
       </label>
@@ -35,7 +35,7 @@ export function TicketFilters({ filters }: { filters: Filters }) {
         <select
           name="status"
           defaultValue={filters.status ?? ''}
-          className="min-h-11 rounded-md border border-line bg-white px-3 text-sm"
+          className="min-h-11 border border-line bg-white px-3 text-sm"
         >
           <option value="">Any</option>
           {ticketStatuses.map((status) => (
@@ -50,7 +50,7 @@ export function TicketFilters({ filters }: { filters: Filters }) {
         <select
           name="priority"
           defaultValue={filters.priority ?? ''}
-          className="min-h-11 rounded-md border border-line bg-white px-3 text-sm"
+          className="min-h-11 border border-line bg-white px-3 text-sm"
         >
           <option value="">Any</option>
           {ticketPriorities.map((priority) => (
@@ -61,10 +61,7 @@ export function TicketFilters({ filters }: { filters: Filters }) {
         </select>
       </label>
       <div className="flex items-end">
-        <button
-          type="submit"
-          className="min-h-11 w-full rounded-md bg-ink px-4 text-sm font-semibold text-white"
-        >
+        <button type="submit" className="min-h-11 w-full bg-rail px-4 text-sm font-semibold text-rail-ink">
           Apply filters
         </button>
       </div>

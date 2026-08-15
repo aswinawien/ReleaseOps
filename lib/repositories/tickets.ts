@@ -89,6 +89,23 @@ export async function listTickets(
   };
 }
 
+export async function listBoardTickets(
+  client: Client,
+  organizationId: string,
+): Promise<TicketWithRelations[]> {
+  const { data, error } = await client
+    .from('tickets')
+    .select(TICKET_SELECT)
+    .eq('organization_id', organizationId)
+    .order('updated_at', { ascending: false })
+    .limit(200);
+
+  if (error) {
+    throw error;
+  }
+  return (data ?? []) as TicketWithRelations[];
+}
+
 export async function getTicketById(
   client: Client,
   ticketId: string,

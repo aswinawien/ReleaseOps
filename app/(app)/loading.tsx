@@ -1,5 +1,5 @@
-import { Spinner } from '@/components/ui/spinner';
+import { QueueSkeleton } from '@/components/ui/queue-skeleton';
 
 export default function Loading() {
-  return <Spinner label="Loading workspace" />;
+  return <QueueSkeleton label="Loading workspace" />;
 }

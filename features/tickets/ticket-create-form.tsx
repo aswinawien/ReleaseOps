@@ -36,7 +36,7 @@ export function TicketCreateForm({ projects }: { projects: Project[] }) {
   }
 
   return (
-    <form action={onSubmit} className="grid gap-4 rounded-xl border border-line bg-card p-6">
+    <form action={onSubmit} className="grid gap-4 border border-line bg-board p-5">
       {error ? <Alert>{error}</Alert> : null}
       <Input label="Title" name="title" required minLength={4} maxLength={120} />
       <Textarea

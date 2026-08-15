@@ -1,6 +1,8 @@
 import { createTicketSchema, ticketFilterSchema } from '@/lib/validations/tickets';
 import { createCommentSchema } from '@/lib/validations/comments';
 import { loginSchema, signupSchema } from '@/lib/validations/auth';
+import { approvalFilterSchema } from '@/lib/validations/approvals';
+import { createInvitationSchema, updateMembershipRoleSchema } from '@/lib/validations/memberships';
 
 describe('ticket validation', () => {
   it('rejects a short title and description', () => {
@@ -54,7 +56,7 @@ describe('auth validation', () => {
     ).toBe(true);
   });
 
-  it('requires a workspace name on signup', () => {
+  it('requires a workspace name on signup unless joining with an invite', () => {
     const result = signupSchema.safeParse({
       email: 'new.owner@harborpine.test',
       password: 'HarborPine!demo1',
@@ -62,5 +64,39 @@ describe('auth validation', () => {
       organizationName: '',
     });
     expect(result.success).toBe(false);
+    expect(
+      signupSchema.safeParse({
+        email: 'new.agent@harborpine.test',
+        password: 'HarborPine!demo1',
+        fullName: 'Jonas Agent',
+        inviteToken: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe('approval and membership validation', () => {
+  it('defaults the approvals board to pending', () => {
+    expect(approvalFilterSchema.parse({}).status).toBe('pending');
+    expect(approvalFilterSchema.parse({ status: 'all' }).status).toBe('all');
+  });
+
+  it('requires a membership id and a known role', () => {
+    expect(updateMembershipRoleSchema.safeParse({ membershipId: 'nope', role: 'owner' }).success).toBe(
+      false,
+    );
+    expect(
+      updateMembershipRoleSchema.safeParse({
+        membershipId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        role: 'agent',
+      }).success,
+    ).toBe(true);
+    expect(
+      createInvitationSchema.safeParse({
+        email: 'new.client@harborpine.test',
+        role: 'client',
+      }).success,
+    ).toBe(true);
+    expect(createInvitationSchema.safeParse({ email: 'nope', role: 'client' }).success).toBe(false);
   });
 });

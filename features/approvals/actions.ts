@@ -48,6 +48,7 @@ export async function requestApprovalAction(
   }
 
   revalidatePath(`/tickets/${ticket.id}`);
+  revalidatePath('/approvals');
   return actionOk({ id: data.id });
 }
 
@@ -82,5 +83,6 @@ export async function reviewApprovalAction(
   }
 
   revalidatePath(`/tickets/${data.ticket_id}`);
+  revalidatePath('/approvals');
   return actionOk({ id: data.id });
 }

@@ -4,11 +4,11 @@ import { cn } from '@/lib/utils';
 type BadgeTone = 'neutral' | 'sea' | 'signal' | 'ok' | 'danger';
 
 const tones: Record<BadgeTone, string> = {
-  neutral: 'bg-line/60 text-ink',
-  sea: 'bg-sea/10 text-sea-dark',
-  signal: 'bg-signal/15 text-ink',
-  ok: 'bg-ok/10 text-ok',
-  danger: 'bg-danger/10 text-danger',
+  neutral: 'border-line bg-white text-ink',
+  sea: 'border-sea/40 bg-sea/10 text-sea-dark',
+  signal: 'border-signal/40 bg-signal/15 text-ink',
+  ok: 'border-ok/40 bg-ok/10 text-ok',
+  danger: 'border-danger/40 bg-danger/10 text-danger',
 };
 
 export function Badge({
@@ -23,7 +23,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+        'inline-flex items-center border px-2 py-0.5 text-xs font-semibold capitalize',
         tones[tone],
         className,
       )}
